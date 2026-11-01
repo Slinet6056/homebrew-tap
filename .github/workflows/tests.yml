@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  tap-syntax:
+    runs-on: macos-15
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04 # 2026.10.26.1
+        with:
+          core: false
+          cask: false
+
+      - name: Check tap syntax, style, and audit
+        run: brew test-bot --only-tap-syntax

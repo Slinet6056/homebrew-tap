@@ -1,0 +1,31 @@
+name: Autobump casks
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: autobump
+  cancel-in-progress: false
+
+jobs:
+  autobump:
+    runs-on: macos-15
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04 # 2026.10.26.1
+        with:
+          core: false
+          cask: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          brew-gh-api-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open pull requests for newer cask versions
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: brew bump --tap="${GITHUB_REPOSITORY_OWNER}/tap" --no-fork --open-pr
