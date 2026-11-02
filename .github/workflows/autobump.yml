@@ -34,7 +34,7 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          output=$(brew bump --tap="${GITHUB_REPOSITORY_OWNER}/tap" --no-fork --open-pr 2>&1) || {
+          output=$(brew bump --full-name --tap="${GITHUB_REPOSITORY_OWNER}/tap" --no-fork --open-pr 2>&1) || {
             printf '%s\n' "$output"
             exit 1
           }
