@@ -11,7 +11,8 @@ cask "alma" do
   homepage "https://alma.now/"
 
   livecheck do
-    url "https://github.com/yetone/alma-releases"
+    url "https://updates.alma.now/latest-mac.yml"
+    strategy :electron_builder
   end
 
   auto_updates true
