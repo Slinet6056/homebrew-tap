@@ -12,7 +12,6 @@ cask "alma" do
 
   livecheck do
     url "https://github.com/yetone/alma-releases"
-    throttle days: 1
   end
 
   auto_updates true
