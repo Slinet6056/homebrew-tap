@@ -1,13 +1,21 @@
 # Homebrew Tap
 
-Install Alma with:
+Add this tap:
 
 ```sh
-brew install --cask slinet6056/tap/alma
+brew tap Slinet6056/tap
 ```
 
-Update an installed cask with:
+Install a GUI application (cask):
 
 ```sh
-brew upgrade --cask alma
+brew install --cask <package>
 ```
+
+Install a command-line package (formula):
+
+```sh
+brew install <package>
+```
+
+Replace `<package>` with the package token you want to install.
