@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@d482da0e602890d3160aade42e72c8556103bf04 # 2026.10.26.1
+        uses: Homebrew/actions/setup-homebrew@main
         with:
           core: false
           cask: false
