@@ -24,7 +24,7 @@ def render_cask(manifest):
 
   url "https://github.com/Slinet6056/orca/releases/download/{tag}/orca-macos-#{{arch}}.dmg"
   name "Orca"
-  desc "Orca IDE with Comagic agent support"
+  desc "IDE with Comagic agent support"
   homepage "https://github.com/Slinet6056/orca"
 
   livecheck do

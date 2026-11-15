@@ -56,9 +56,7 @@ jobs:
             echo 'An update PR is already open.'
             exit 0
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          printf 'version=%s\nbranch=%s\nchanged=true\n' "$version" "$branch" >> "$GITHUB_OUTPUT"
       - name: Validate the generated cask
         if: steps.release.outputs.changed == 'true'
         run: |
