@@ -1,0 +1,86 @@
+name: Update Orca Comagic
+
+on:
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autobump
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - name: Set up Homebrew and check out the tap
+        uses: Homebrew/actions/setup-homebrew@main
+        with:
+          core: false
+          cask: false
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          brew-gh-api-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - name: Check the latest complete Comagic release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --retry 3 --retry-all-errors --retry-delay 2 -sSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -w '%{http_code}' -o "$RUNNER_TEMP/release.json" \
+            https://api.github.com/repos/Slinet6056/orca/releases/latest)
+          if [[ "$status" = 404 ]]; then
+            echo 'No Comagic release yet.'
+            exit 0
+          fi
+          test "$status" = 200
+          python3 -m unittest discover -s scripts
+          tag=$(jq -r .tag_name "$RUNNER_TEMP/release.json")
+          [[ "$tag" =~ ^comagic-[0-9a-f]{40}$ ]]
+          gh release download "$tag" --repo Slinet6056/orca --pattern comagic-release.json --dir "$RUNNER_TEMP" --clobber
+          python3 scripts/update_orca_comagic.py "$RUNNER_TEMP/comagic-release.json" "$RUNNER_TEMP/release.json"
+          if git diff --quiet -- Casks/orca.rb && git ls-files --error-unmatch Casks/orca.rb >/dev/null 2>&1; then
+            exit 0
+          fi
+          version=$(jq -r .version "$RUNNER_TEMP/comagic-release.json")
+          branch="bump/orca-comagic-$version"
+          if [[ -n "$(gh pr list --head "$branch" --json number --jq '.[].number')" ]]; then
+            echo 'An update PR is already open.'
+            exit 0
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+      - name: Validate the generated cask
+        if: steps.release.outputs.changed == 'true'
+        run: |
+          brew style Casks/orca.rb
+          brew audit --cask --strict --online slinet6056/tap/orca
+      - name: Open and queue the update PR
+        if: steps.release.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ steps.release.outputs.version }}
+          BRANCH: ${{ steps.release.outputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install jj
+          jj git init --colocate
+          jj config set --repo user.name 'github-actions[bot]'
+          jj config set --repo user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          jj describe -m "orca-comagic $VERSION"
+          jj bookmark set "$BRANCH" -r @
+          jj new
+          jj git push --bookmark "$BRANCH"
+          gh pr create --head "$BRANCH" --title "orca-comagic $VERSION" \
+            --body 'Update Orca Comagic from its complete GitHub release, including both architecture checksums.'
+          gh pr merge "$BRANCH" --auto --squash
