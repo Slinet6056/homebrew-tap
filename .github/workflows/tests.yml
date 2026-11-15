@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: tests-${{ github.ref }}
@@ -23,3 +24,24 @@ jobs:
 
       - name: Check tap syntax, style, and audit
         run: brew test-bot --only-tap-syntax
+
+      - name: Build and test formulae
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          formula_list="$RUNNER_TEMP/formulae.txt"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" \
+              --jq '.[] | select(.status != "removed") | .filename | select(startswith("Formula/") and endswith(".rb"))' \
+              > "$formula_list"
+          else
+            git ls-files 'Formula/*.rb' > "$formula_list"
+          fi
+
+          while IFS= read -r file; do
+            formula="${file#Formula/}"
+            formula="${formula%.rb}"
+            brew install --build-from-source "$GITHUB_REPOSITORY_OWNER/tap/$formula"
+            brew test "$GITHUB_REPOSITORY_OWNER/tap/$formula"
+          done < "$formula_list"

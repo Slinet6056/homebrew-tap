@@ -1,4 +1,4 @@
-name: Autobump casks
+name: Autobump packages
 
 on:
   schedule:
@@ -29,7 +29,7 @@ jobs:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           brew-gh-api-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
-      - name: Open and queue pull requests for newer cask versions
+      - name: Open and queue pull requests for newer package versions
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
